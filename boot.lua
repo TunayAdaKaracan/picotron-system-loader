@@ -1,5 +1,5 @@
 --[[
-	Picotron Kernel
+	Arc System Loader
 	Handle process creation and slice allocation
 	-- should be small so that can configure to just run a single cart (update: why?)
 ]]
