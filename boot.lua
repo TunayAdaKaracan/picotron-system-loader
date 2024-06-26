@@ -7,8 +7,10 @@ local selected_system = "picotron"
 
 local function prepare_system(system_name)
 	local path = "/systems/"..system_name.."/"
+	local files = ls(path)
 	
-	for file in all(ls(path)) do
+	for fileindex=0, #files do
+		local file = files[fileindex]
 		cp(path..file, "/system/"..file)
 	end
 end
