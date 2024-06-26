@@ -3,7 +3,7 @@
 ]]
 
 -- TODO: system selector
-local selected_system = "ultrasystem"
+local selected_system = "picotron"
 
 
 -- from api.lua#_rm
