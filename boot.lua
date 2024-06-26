@@ -1,3 +1,7 @@
+--[[
+	Arc Loader by Kutup Tilkisi
+]]
+
 -- TODO: system selector
 local selected_system = "picotron"
 
