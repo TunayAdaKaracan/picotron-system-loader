@@ -37,10 +37,6 @@ local function copy_system(path)
 	if attribs == "folder" then
 		mkdir(target_path)
 
-		-- TODO: Copy over folder metadatas
-		-- Right now causes an unknown crash. No log. Can't solve
-		-- cp(source_path."/.info.pod", target_path."/.info.pod")
-		
 		local l = ls(source_path)
 		add(l, ".info.pod")
 		for k, fn in pairs(l) do	
@@ -66,9 +62,6 @@ local function prepare_system()
 	
 	-- Copy our bootloader back to system main file
 	cp("/arcloadertemp/boot.lua", "/system/boot.lua")
-
-	-- It is required for default picotron startup. Version check creates an error.
-	cp("/systems/"..selected_system.."/.info.pod", "/system/.info.pod")
 
 	-- Delete our temporary folder.
 	delete("/arcloadertemp")
