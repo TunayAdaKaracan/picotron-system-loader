@@ -9,11 +9,11 @@
       "repo": "https://github.com/TunayAdaKaracan/dev-system",
     },
     {
-      "id": "devxxx",
-      "name": "dev-system",
+      "id": "ultrasystem",
+      "name": "ultra-system",
       "description": "A simple development environment for Picotron.",
       "author": "KutupTilkisi",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "repo": "https://github.com/TunayAdaKaracan/dev-system",
     }
   ]
