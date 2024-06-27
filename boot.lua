@@ -8,7 +8,7 @@ function fetch_metadata(filename)
 	return result
 end
 
-local selected_system = fetch_metadata("/systems")
+local selected_system = fetch_metadata("/systems").system or "picotron"
 
 -- from api.lua#_rm
 local function delete(path)
