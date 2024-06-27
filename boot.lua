@@ -3,7 +3,7 @@
 ]]
 
 -- TODO: system selector
-local selected_system = "picotron"
+local selected_system = "dev"
 
 
 -- from api.lua#_rm
@@ -42,6 +42,7 @@ local function copy_system(path)
 		-- cp(source_path."/.info.pod", target_path."/.info.pod")
 		
 		local l = ls(source_path)
+		add(l, ".info.pod")
 		for k, fn in pairs(l) do	
 			copy_system(path.."/"..fn)
 		end
