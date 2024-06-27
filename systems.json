@@ -7,6 +7,14 @@
       "author": "KutupTilkisi",
       "version": "1.0.0",
       "repo": "https://github.com/TunayAdaKaracan/dev-system",
+    },
+    {
+      "id": "devxxx",
+      "name": "dev-system",
+      "description": "A simple development environment for Picotron.",
+      "author": "KutupTilkisi",
+      "version": "1.0.0",
+      "repo": "https://github.com/TunayAdaKaracan/dev-system",
     }
   ]
 }
