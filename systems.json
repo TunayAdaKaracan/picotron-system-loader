@@ -6,15 +6,7 @@
       "description": "A simple development environment for Picotron.",
       "author": "KutupTilkisi",
       "version": "1.0.0",
-      "repo": "https://github.com/TunayAdaKaracan/dev-system",
+      "repo": "http://160.20.108.214:3030/KutupTilkisi/dev-system",
     },
-    {
-      "id": "ultrasystem",
-      "name": "ultra-system",
-      "description": "A simple development environment for Picotron.",
-      "author": "KutupTilkisi",
-      "version": "1.2.0",
-      "repo": "https://github.com/TunayAdaKaracan/dev-system",
-    }
   ]
 }
