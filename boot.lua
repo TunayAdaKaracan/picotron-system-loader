@@ -3,8 +3,12 @@
 ]]
 
 -- TODO: system selector
-local selected_system = "picotron"
+function fetch_metadata(filename)
+	local result = _fetch_metadata(fstat(filename) == "folder" and filename.."/.info.pod" or filename)
+	return result
+end
 
+local selected_system = fetch_metadata("/systems")
 
 -- from api.lua#_rm
 local function delete(path)
