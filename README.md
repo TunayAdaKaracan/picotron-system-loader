@@ -4,5 +4,5 @@ Project is still on very early stage and shouldn't be used for anything else tha
 If you want to contribute to project, you are free to do so.
 
 #### TODO
-- [] OS selector like you would see in real computers
-- [] Find a way to share applications which system you are on.
+- [ ] OS selector like you would see in real computers.
+- [ ] Find a way to share applications which system you are on.
