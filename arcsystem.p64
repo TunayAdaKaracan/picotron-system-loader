@@ -1,0 +1,1123 @@
+picotron cartridge // www.picotron.net
+version 2
+
+:: gfx/
+:: map/
+:: sfx/
+:: gfx/0.gfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjMzOjMyIixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAwOTozNjowNyIscmV2aXNpb249NDE3XV1sejQArQAAAC8yAADzFHtbMF09e2JtcD1weHUA
+QyAQEATw8CxmbGFncz0wLHBhbl94CADYeT0wLHpvb209MTN9LDIA-wcFBGsHBrsHCwcGBwarJwbL
+Bwa7RwZLRAAMHDZEAHBIBwYYBwaoRQARyAMAAQ0ATxgHBkiOAA8OwAAPMgD-----------------
+------------------------------------------------cVA9MTN9fQ==
+:: gfx/.info.pod
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjMzOjMxIixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAxMjoyNTozMSJdXWx6NAAEAAAAAwAAADBuaWw=
+:: map/0.map
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjMzOjMyIixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAwOTozNjowNyIscmV2aXNpb249NDE1XV1sejQAaAAAAFgQAADwCHt7Ym1wPXVzZXJkYXRh
+KCJpMTYiLDMyAwAvIjABAP--------------------vxCCIpLGhpZGRlbj1mYWxzZSxwYW5feD0w
+CADSeT0wLHRpbGVfaD0xNgoAEHcKAIB6b29tPTF9fQ==
+:: map/.info.pod
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjMzOjMxIixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAxMjoyNTozMSJdXWx6NAAEAAAAAwAAADBuaWw=
+:: sfx/0.sfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjMzOjMyIixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAwOTozNjowNyIscmV2aXNpb249NDE0XV1sejQAqQAAAJIXAAD-LHB4dQADKAAABAAED0AQ
+Ag4AAaABIAKgDgAPEAAN8MoBAgMEBQYHAA--kAgJCgsPDA8NDw4PDwAP--D-AQDr-yfSARAGDyAQ
+ASABIAHwAAIQAgwQASAPISABMA9A8MMPKA--8MYP_AoP-w_AD-cPDQHwCQEQBgwwAP------vR--
+AQCsv8gPQAANQP--sPBwCgD-------------------_EUP_w8P85
+:: sfx/.info.pod
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjMzOjMxIixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAxMjoyNTozMSJdXWx6NAAEAAAAAwAAADBuaWw=
+:: basexx.lua
+--[[pod_format="raw",created="2024-03-25 05:15:49",modified="2024-06-28 09:12:22",revision=9]]
+--[[
+
+This code was originally found at https://github.com/aiq/basexx/
+Modified to work with picotron by @PyroChiliarch
+
+Licence:
+The MIT License (MIT)
+
+Copyright (c) 2013 aiq
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+]]--
+
+
+
+
+--------------------------------------------------------------------------------
+-- util functions
+--------------------------------------------------------------------------------
+
+local function divide_string( str, max )
+   local result = {}
+
+   local start = 1
+   for i = 1, #str do
+      if i % max == 0 then
+         table.insert( result, str:sub( start, i ) )
+         start = i + 1
+      elseif i == #str then
+         table.insert( result, str:sub( start, i ) )
+      end
+   end
+
+   return result
+end
+
+local function number_to_bit( num, length )
+   local bits = {}
+
+   while num > 0 do
+      local rest = math.floor( math.fmod( num, 2 ) )
+      table.insert( bits, rest )
+      num = ( num - rest ) / 2
+   end
+
+   while #bits < length do
+      table.insert( bits, "0" )
+   end
+
+   return string.reverse( table.concat( bits ) )
+end
+
+local function ignore_set( str, set )
+   if set then
+      str = str:gsub( "["..set.."]", "" )
+   end
+   return str
+end
+
+local function pure_from_bit( str )
+   return ( str:gsub( '........', function ( cc )
+               return string.char( tonumber( cc, 2 ) )
+            end ) )
+end
+
+local function unexpected_char_error( str, pos )
+   local c = string.sub( str, pos, pos )
+   return string.format( "unexpected character at position %d: '%s'", pos, c )
+end
+
+--------------------------------------------------------------------------------
+
+--local basexx = {}
+basexx = {}
+
+--------------------------------------------------------------------------------
+-- base2(bitfield) decode and encode function
+--------------------------------------------------------------------------------
+
+local bitMap = { o = "0", i = "1", l = "1" }
+
+function basexx.from_bit( str, ignore )
+   str = ignore_set( str, ignore )
+   str = string.lower( str )
+   str = str:gsub( '[ilo]', function( c ) return bitMap[ c ] end )
+   local pos = string.find( str, "[^01]" )
+   if pos then return nil, unexpected_char_error( str, pos ) end
+
+   return pure_from_bit( str )
+end
+
+function basexx.to_bit( str )
+   return ( str:gsub( '.', function ( c )
+               local byte = string.byte( c )
+               local bits = {}
+               for _ = 1,8 do
+                  table.insert( bits, byte % 2 )
+                  byte = math.floor( byte / 2 )
+               end
+               return table.concat( bits ):reverse()
+            end ) )
+end
+
+--------------------------------------------------------------------------------
+-- base16(hex) decode and encode function
+--------------------------------------------------------------------------------
+
+function basexx.from_hex( str, ignore )
+   str = ignore_set( str, ignore )
+   local pos = string.find( str, "[^%x]" )
+   if pos then return nil, unexpected_char_error( str, pos ) end
+
+   return ( str:gsub( '..', function ( cc )
+               return string.char( tonumber( cc, 16 ) )
+            end ) )
+end
+
+function basexx.to_hex( str )
+   return ( str:gsub( '.', function ( c )
+               return string.format('%02X', string.byte( c ) )
+            end ) )
+end
+
+--------------------------------------------------------------------------------
+-- generic function to decode and encode base32/base64
+--------------------------------------------------------------------------------
+
+local function from_basexx( str, alphabet, bits )
+   local result = {}
+   for i = 1, #str do
+      local c = string.sub( str, i, i )
+      if c ~= '=' then
+         local index = string.find( alphabet, c, 1, true )
+         if not index then
+            return nil, unexpected_char_error( str, i )
+         end
+         table.insert( result, number_to_bit( index - 1, bits ) )
+      end
+   end
+
+   local value = table.concat( result )
+   local pad = #value % 8
+   return pure_from_bit( string.sub( value, 1, #value - pad ) )
+end
+
+local function to_basexx( str, alphabet, bits, pad )
+   local bitString = basexx.to_bit( str )
+
+   local chunks = divide_string( bitString, bits )
+   local result = {}
+   for _,value in ipairs( chunks ) do
+      if ( #value < bits ) then
+         value = value .. string.rep( '0', bits - #value )
+      end
+      local pos = tonumber( value, 2 ) + 1
+      table.insert( result, alphabet:sub( pos, pos ) )
+   end
+
+   table.insert( result, pad )
+   return table.concat( result )   
+end
+
+--------------------------------------------------------------------------------
+-- rfc 3548: http://www.rfc-editor.org/rfc/rfc3548.txt
+--------------------------------------------------------------------------------
+
+local base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+local base32PadMap = { "", "======", "====", "===", "=" }
+
+function basexx.from_base32( str, ignore )
+   str = ignore_set( str, ignore )
+   return from_basexx( string.upper( str ), base32Alphabet, 5 )
+end
+
+function basexx.to_base32( str )
+   return to_basexx( str, base32Alphabet, 5, base32PadMap[ #str % 5 + 1 ] )
+end
+
+--------------------------------------------------------------------------------
+-- crockford: http://www.crockford.com/wrmg/base32.html
+--------------------------------------------------------------------------------
+
+local crockfordAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+local crockfordMap = { O = "0", I = "1", L = "1" }
+
+function basexx.from_crockford( str, ignore )
+   str = ignore_set( str, ignore )
+   str = string.upper( str )
+   str = str:gsub( '[ILOU]', function( c ) return crockfordMap[ c ] end )
+   return from_basexx( str, crockfordAlphabet, 5 )
+end
+
+function basexx.to_crockford( str )
+   return to_basexx( str, crockfordAlphabet, 5, "" )
+end
+
+--------------------------------------------------------------------------------
+-- base64 decode and encode function
+--------------------------------------------------------------------------------
+
+local base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"..
+                       "abcdefghijklmnopqrstuvwxyz"..
+                       "0123456789+/"
+local base64PadMap = { "", "==", "=" }
+ 
+function basexx.from_base64( str, ignore )
+   str = ignore_set( str, ignore )
+   return from_basexx( str, base64Alphabet, 6 )
+end
+
+function basexx.to_base64( str )
+   return to_basexx( str, base64Alphabet, 6, base64PadMap[ #str % 3 + 1 ] )
+end
+
+--------------------------------------------------------------------------------
+-- URL safe base64 decode and encode function
+--------------------------------------------------------------------------------
+
+local url64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"..
+                      "abcdefghijklmnopqrstuvwxyz"..
+                      "0123456789-_"
+ 
+function basexx.from_url64( str, ignore )
+   str = ignore_set( str, ignore )
+   return from_basexx( str, url64Alphabet, 6 )
+end
+
+function basexx.to_url64( str )
+   return to_basexx( str, url64Alphabet, 6, "" )
+end
+
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+local function length_error( len, d )
+   return string.format( "invalid length: %d - must be a multiple of %d", len, d )
+end
+
+local z85Decoder = { 0x00, 0x44, 0x00, 0x54, 0x53, 0x52, 0x48, 0x00,
+                     0x4B, 0x4C, 0x46, 0x41, 0x00, 0x3F, 0x3E, 0x45, 
+                     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+                     0x08, 0x09, 0x40, 0x00, 0x49, 0x42, 0x4A, 0x47, 
+                     0x51, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 
+                     0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 
+                     0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 
+                     0x3B, 0x3C, 0x3D, 0x4D, 0x00, 0x4E, 0x43, 0x00, 
+                     0x00, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 
+                     0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 
+                     0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 
+                     0x21, 0x22, 0x23, 0x4F, 0x00, 0x50, 0x00, 0x00 }
+
+function basexx.from_z85( str, ignore )
+   str = ignore_set( str, ignore )
+   if ( #str % 5 ) ~= 0 then
+      return nil, length_error( #str, 5 )
+   end
+
+   local result = {}
+
+   local value = 0
+   for i = 1, #str do
+      local index = string.byte( str, i ) - 31
+      if index < 1 or index >= #z85Decoder then
+         return nil, unexpected_char_error( str, i )
+      end
+      value = ( value * 85 ) + z85Decoder[ index ]
+      if ( i % 5 ) == 0 then
+         local divisor = 256 * 256 * 256
+         while divisor ~= 0 do
+            local b = math.floor( value / divisor ) % 256
+            table.insert( result, string.char( b ) )
+            divisor = math.floor( divisor / 256 )
+         end
+         value = 0
+      end
+   end
+
+   return table.concat( result )
+end
+
+local z85Encoder = "0123456789"..
+                   "abcdefghijklmnopqrstuvwxyz"..
+                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"..
+                   ".-:+=^!/*?&<>()[]{}@%$#"
+
+function basexx.to_z85( str )
+   if ( #str % 4 ) ~= 0 then
+      return nil, length_error( #str, 4 )
+   end
+
+   local result = {}
+
+   local value = 0
+   for i = 1, #str do
+      local b = string.byte( str, i )
+      value = ( value * 256 ) + b
+      if ( i % 4 ) == 0 then
+         local divisor = 85 * 85 * 85 * 85
+         while divisor ~= 0 do
+            local index = ( math.floor( value / divisor ) % 85 ) + 1
+            table.insert( result, z85Encoder:sub( index, index ) )
+            divisor = math.floor( divisor / 85 )
+         end
+         value = 0
+      end
+   end
+
+   return table.concat( result )
+end
+
+--------------------------------------------------------------------------------
+
+-- return basexx
+:: json.lua
+--[[pod_format="raw",created="2024-03-19 20:28:29",modified="2024-06-19 18:32:36",revision=50]]
+--
+-- json.lua
+--
+-- Copyright (c) 2020 rxi
+--
+-- Permission is hereby granted, free of charge, to any person obtaining a copy of
+-- this software and associated documentation files (the "Software"), to deal in
+-- the Software without restriction, including without limitation the rights to
+-- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+-- of the Software, and to permit persons to whom the Software is furnished to do
+-- so, subject to the following conditions:
+--
+-- The above copyright notice and this permission notice shall be included in all
+-- copies or substantial portions of the Software.
+--
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+-- SOFTWARE.
+--
+
+json = { _version = "0.1.2" }
+
+-------------------------------------------------------------------------------
+-- Encode
+-------------------------------------------------------------------------------
+
+local encode
+
+local escape_char_map = {
+  [ "\\" ] = "\\",
+  [ "\"" ] = "\"",
+  [ "\b" ] = "b",
+  [ "\f" ] = "f",
+  [ "\n" ] = "n",
+  [ "\r" ] = "r",
+  [ "\t" ] = "t",
+}
+
+local escape_char_map_inv = { [ "/" ] = "/" }
+for k, v in pairs(escape_char_map) do
+  escape_char_map_inv[v] = k
+end
+
+
+local function escape_char(c)
+  return "\\" .. (escape_char_map[c] or string.format("u%04x", c:byte()))
+end
+
+
+local function encode_nil(val)
+  return "null"
+end
+
+
+local function encode_table(val, stack)
+  local res = {}
+  stack = stack or {}
+
+  -- Circular reference?
+  if stack[val] then error("circular reference") end
+
+  stack[val] = true
+
+  if rawget(val, 1) ~= nil or next(val) == nil then
+    -- Treat as array -- check keys are valid and it is not sparse
+    local n = 0
+    for k in pairs(val) do
+      if type(k) ~= "number" then
+        error("invalid table: mixed or invalid key types")
+      end
+      n = n + 1
+    end
+    if n ~= #val then
+      error("invalid table: sparse array")
+    end
+    -- Encode
+    for i, v in ipairs(val) do
+      table.insert(res, encode(v, stack))
+    end
+    stack[val] = nil
+    return "[" .. table.concat(res, ",") .. "]"
+
+  else
+    -- Treat as an object
+    for k, v in pairs(val) do
+      if type(k) ~= "string" then
+        error("invalid table: mixed or invalid key types")
+      end
+      table.insert(res, encode(k, stack) .. ":" .. encode(v, stack))
+    end
+    stack[val] = nil
+    return "{" .. table.concat(res, ",") .. "}"
+  end
+end
+
+
+local function encode_string(val)
+  return '"' .. val:gsub('[%z\1-\31\\"]', escape_char) .. '"'
+end
+
+
+local function encode_number(val)
+  -- Check for NaN, -inf and inf
+  if val ~= val or val <= -math.huge or val >= math.huge then
+    error("unexpected number value '" .. tostring(val) .. "'")
+  end
+  return string.format("%.14g", val)
+end
+
+
+local type_func_map = {
+  [ "nil"     ] = encode_nil,
+  [ "table"   ] = encode_table,
+  [ "string"  ] = encode_string,
+  [ "number"  ] = encode_number,
+  [ "boolean" ] = tostring,
+}
+
+
+encode = function(val, stack)
+  local t = type(val)
+  local f = type_func_map[t]
+  if f then
+    return f(val, stack)
+  end
+  error("unexpected type '" .. t .. "'")
+end
+
+
+function json.encode(val)
+  return ( encode(val) )
+end
+
+
+-------------------------------------------------------------------------------
+-- Decode
+-------------------------------------------------------------------------------
+
+local parse
+
+local function create_set(...)
+  local res = {}
+  for i = 1, select("#", ...) do
+    res[ select(i, ...) ] = true
+  end
+  return res
+end
+
+local space_chars   = create_set(" ", "\t", "\r", "\n")
+local delim_chars   = create_set(" ", "\t", "\r", "\n", "]", "}", ",")
+local escape_chars  = create_set("\\", "/", '"', "b", "f", "n", "r", "t", "u")
+local literals      = create_set("true", "false", "null")
+
+local literal_map = {
+  [ "true"  ] = true,
+  [ "false" ] = false,
+  [ "null"  ] = nil,
+}
+
+
+local function next_char(str, idx, set, negate)
+  for i = idx, #str do
+    if set[str:sub(i, i)] ~= negate then
+      return i
+    end
+  end
+  return #str + 1
+end
+
+
+local function decode_error(str, idx, msg)
+  local line_count = 1
+  local col_count = 1
+  for i = 1, idx - 1 do
+    col_count = col_count + 1
+    if str:sub(i, i) == "\n" then
+      line_count = line_count + 1
+      col_count = 1
+    end
+  end
+  error( string.format("%s at line %d col %d", msg, line_count, col_count) )
+end
+
+
+local function codepoint_to_utf8(n)
+  -- http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=iws-appendixa
+  local f = math.floor
+  if n <= 0x7f then
+    return string.char(n)
+  elseif n <= 0x7ff then
+    return string.char(f(n / 64) + 192, n % 64 + 128)
+  elseif n <= 0xffff then
+    return string.char(f(n / 4096) + 224, f(n % 4096 / 64) + 128, n % 64 + 128)
+  elseif n <= 0x10ffff then
+    return string.char(f(n / 262144) + 240, f(n % 262144 / 4096) + 128,
+                       f(n % 4096 / 64) + 128, n % 64 + 128)
+  end
+  error( string.format("invalid unicode codepoint '%x'", n) )
+end
+
+
+local function parse_unicode_escape(s)
+  local n1 = tonumber( s:sub(1, 4),  16 )
+  local n2 = tonumber( s:sub(7, 10), 16 )
+   -- Surrogate pair?
+  if n2 then
+    return codepoint_to_utf8((n1 - 0xd800) * 0x400 + (n2 - 0xdc00) + 0x10000)
+  else
+    return codepoint_to_utf8(n1)
+  end
+end
+
+
+local function parse_string(str, i)
+  local res = ""
+  local j = i + 1
+  local k = j
+
+  while j <= #str do
+    local x = str:byte(j)
+
+    if x < 32 then
+      decode_error(str, j, "control character in string")
+
+    elseif x == 92 then -- `\`: Escape
+      res = res .. str:sub(k, j - 1)
+      j = j + 1
+      local c = str:sub(j, j)
+      if c == "u" then
+        local hex = str:match("^[dD][89aAbB]%x%x\\u%x%x%x%x", j + 1)
+                 or str:match("^%x%x%x%x", j + 1)
+                 or decode_error(str, j - 1, "invalid unicode escape in string")
+        res = res .. parse_unicode_escape(hex)
+        j = j + #hex
+      else
+        if not escape_chars[c] then
+          decode_error(str, j - 1, "invalid escape char '" .. c .. "' in string")
+        end
+        res = res .. escape_char_map_inv[c]
+      end
+      k = j + 1
+
+    elseif x == 34 then -- `"`: End of string
+      res = res .. str:sub(k, j - 1)
+      return res, j + 1
+    end
+
+    j = j + 1
+  end
+
+  decode_error(str, i, "expected closing quote for string")
+end
+
+
+local function parse_number(str, i)
+  local x = next_char(str, i, delim_chars)
+  local s = str:sub(i, x - 1)
+  local n = tonumber(s)
+  if not n then
+    decode_error(str, i, "invalid number '" .. s .. "'")
+  end
+  return n, x
+end
+
+
+local function parse_literal(str, i)
+  local x = next_char(str, i, delim_chars)
+  local word = str:sub(i, x - 1)
+  if not literals[word] then
+    decode_error(str, i, "invalid literal '" .. word .. "'")
+  end
+  return literal_map[word], x
+end
+
+
+local function parse_array(str, i)
+  local res = {}
+  local n = 1
+  i = i + 1
+  while 1 do
+    local x
+    i = next_char(str, i, space_chars, true)
+    -- Empty / end of array?
+    if str:sub(i, i) == "]" then
+      i = i + 1
+      break
+    end
+    -- Read token
+    x, i = parse(str, i)
+    res[n] = x
+    n = n + 1
+    -- Next token
+    i = next_char(str, i, space_chars, true)
+    local chr = str:sub(i, i)
+    i = i + 1
+    if chr == "]" then break end
+    if chr ~= "," then decode_error(str, i, "expected ']' or ','") end
+  end
+  return res, i
+end
+
+
+local function parse_object(str, i)
+  local res = {}
+  i = i + 1
+  while 1 do
+    local key, val
+    i = next_char(str, i, space_chars, true)
+    -- Empty / end of object?
+    if str:sub(i, i) == "}" then
+      i = i + 1
+      break
+    end
+    -- Read key
+    if str:sub(i, i) ~= '"' then
+      decode_error(str, i, "expected string for key")
+    end
+    key, i = parse(str, i)
+    -- Read ':' delimiter
+    i = next_char(str, i, space_chars, true)
+    if str:sub(i, i) ~= ":" then
+      decode_error(str, i, "expected ':' after key")
+    end
+    i = next_char(str, i + 1, space_chars, true)
+    -- Read value
+    val, i = parse(str, i)
+    -- Set
+    res[key] = val
+    -- Next token
+    i = next_char(str, i, space_chars, true)
+    local chr = str:sub(i, i)
+    i = i + 1
+    if chr == "}" then break end
+    if chr ~= "," then decode_error(str, i, "expected '}' or ','") end
+  end
+  return res, i
+end
+
+
+local char_func_map = {
+  [ '"' ] = parse_string,
+  [ "0" ] = parse_number,
+  [ "1" ] = parse_number,
+  [ "2" ] = parse_number,
+  [ "3" ] = parse_number,
+  [ "4" ] = parse_number,
+  [ "5" ] = parse_number,
+  [ "6" ] = parse_number,
+  [ "7" ] = parse_number,
+  [ "8" ] = parse_number,
+  [ "9" ] = parse_number,
+  [ "-" ] = parse_number,
+  [ "t" ] = parse_literal,
+  [ "f" ] = parse_literal,
+  [ "n" ] = parse_literal,
+  [ "[" ] = parse_array,
+  [ "{" ] = parse_object,
+}
+
+
+parse = function(str, idx)
+  local chr = str:sub(idx, idx)
+  local f = char_func_map[chr]
+  if f then
+    return f(str, idx)
+  end
+  decode_error(str, idx, "unexpected character '" .. chr .. "'")
+end
+
+
+function json.decode(str)
+  if type(str) ~= "string" then
+    error("expected argument of type string, got " .. type(str))
+  end
+  local res, idx = parse(str, next_char(str, 1, space_chars, true))
+  idx = next_char(str, idx, space_chars, true)
+  if idx <= #str then
+    decode_error(str, idx, "trailing garbage")
+  end
+  return res
+end
+
+return json
+:: label.png
+b64$iVBORw0KGgoAAAANSUhEUgAAAeAAAAEOCAIAAADe_FMwAAAhRklEQVR4Ae2dP2gcSdrGq4dJ
+HClV8I2EQZmcfZnYSE4cSEygg8luDAtOtMsmRizYmWzYYBOzq8RoYXXZwHUgpMCJFdwZXXTZdiYw
+Ul_gVJETg74P3r3X5eqenpruqur68zwUxa_7q7vrz-s_b5q9f-tRQBAEQf5pgC2AIAjyU0Pl_t35
+O_XOk50n2CYIgiyJPId8RuaGwcp4fZvSHK9vg9MP-669f-LN-y6cyZOdJ9QvYdDzPoQwgiDIqjsT
+vDt-Z9BzZKtd6pvy4Kpfd5eOO9cYtDIt_grCCIIgyGzB0KkfqkHzCzQa7gxBkP9Op6laE3QvZRoN
+a1ENml6mFzxZDARBUNWgai91PF3f2RZ__eSb-7W62BqDpjkpW4CwgCAoeml6PWv64d9WjVs1aP1y
+BEEQ1FFkOO-O3z3ZecL_SKzpoVb9qnkmtXY8z7LbzTl7--YjogSCIMhDDbAFEARBfiobbe5hFyAI
+gnwUGfRoc4_aVXb2o94ZvcE_tWSMjDk1om_29tBZsiXrLFEmHpLcXp7Hx_kkvuF9c39gUcZfQ1zC
+ZI1zCoq70CaS_N33LUst7iEIggIr1L1Xm0RKK3ojfZpJGiWn0LrulScpl4izRJxsSGzbeR4rJ5L4
+Lfbny1f8ObC4YxEma5ZTU9xFN_7Eb7EnWcqxDkEQFEBB9rbaxF1OmdF37CF5H_JgzpFYm_6eeJ5_
+ifhLfAnWCyfeqrU-Ao4_8ZvWHtCBxRp-yoGBjXDKivJMY0385rVniGkIgiCvi21YlSficorebA-J
+_xANc8pE1urXG2j6JeIsUSaYM441k9tlfmQca-p-BREcWKzxN7eigpdkKPqzji-x6TJDHEMQBHld
+VKOpPDGVUIXRG_khOfGj5JjaVx4dUxJG6S8RJxUSuK-8j5UjSfwUDimmpcFkDTKUQjEOOvGzXuL1
+5vJo4Zi1rX1kDgRBKJ5OK8P93a1mszGHoMtpLaPv2ENVQ4iVOXdCaV9N3U2vb9A2-h6lv8SdVA44
+uLx14AtxczAJ7n6D9A3a3hziizmYrEGGUivM3nLmPjRvLo80R65t7SNJIAiC-jRsB5Xh-u5Ws7ms
+VEGU04WM3kgP1fpDCuxbqz8Gq72_QbtPy8j8JZGkssQepqsPfhE9e5vOXyW2vY3QN2gfDil0huF2
+ZKjWH1JgHxI5kydUFrnMlsL09x9_3p48WDjsYvbp6ZvnSAYIgqCmamm2Mrx-_1Gz_VDBep_AEUZv
+pIdq-SEF7qstdwxGejLf--nr3--nr39vNmh-kjMCf0kkkWJNVM_bvDkRcy-Ju1y1NLLgZl_m5uch
+hR5nMFlTDNX6QzrsJmEz_cdlkeswwhSCIMj3amm7enjOESwEfcce0vSKuLnqCaaama1PPEUjmDzY
+w_SMrMl7FSXbS9KuHp3IATRw0EuAyXZkaCm7SKRgG_FM-kFZ5K0ZkQdBEOR7eTRYPULncCePvnUP
+LWUXKXCX1n5z7_9u-Wz_pGvQ-pJI8viWkAk2edNiZdcl31t3pubVIYUbWzDcjgzpK53ivVQyZvLL
+ZZFr8v3drc_Hvba1j4iHIChR3d-d_txaVCqX7O3Eahl9xx5aVvK_Rcw6zbxBHx4cL3W-_VMt3iKD
+9j9pA3KZRBLGh4REk70pHTZc4FsYdLvW2qADOqSAYggma4QhfSUVG9Wky_RBZZFr8v3dbXUrX70_
+J3j5YufV63Pq_ZKAhlWBn1a-yfeVYfLvlLfWtvYR2RAEJar7u1ulHR4cy3B4cMx3agfII5X7S71V
+25QqFAqHNWH0HXtoWcn7Fj1zrtkyaH2r5WbQoMNN3YD8JamEMc5c8NCWavLWRc_9GXTVeWtba4OO
+4JCCmCoMtyND7ZRInGTyRVnkmnx-d1vdslevzwlevth59fr85YudeY8Iap-SJT_VBysvKm-JWtva
+RwRDEJSo7u9ufW6jzT0qRAShc1gTRt_6h9pJ3r1YOTaDjjWBA5okuAWjtW7yBkbD0Rp0rAcWylRh
+uB0ZaqfI4iGTL8oi1_f7u1s-T2htax9hCkEQ1EN5pAZWmp_TRN_xhzraRTQc2KajV9LY2_nFlCS9
+cLUYoy3V5D0MjgMujHEcgFn2PM5guN0Z6mIawXEmX5RFHhAjaiEIggIojKPNPWpghf2cGPrWPWTD
+QPzneJwavVK3-HSZUBLDT_aCh2akyVvqFUdYDP3f9B7ZqynBcDsyZMNAvOJMviiLPAJGBEMQBAVQ
+DEebe9TACIneQ9FqD9k4td45S2GjyyJH--7tR2RdL3r87CHHoRyTxhlbbVyUPj1y-AYte7Qnm_6e
+4c69e7QDg2aGbBhIL-zFoHuchBtmw0pNvRj00zfPhRC---Bzuxc133365vm8YfIEWk-GrEHD6aBl
+9cWgE6mEZFicLYlw1aDfnb_r7s_TnSem3JmdsZ1HN7xFT_Ve5zvtZtJCvLHyZpJB06E46_FuljyE
+99YBD92vsGoWih4-e2jp17Ry96nSb1_7Faa8WN9wn755LoRg46ZHzaZZHfb0zfOby6O1rX3qeYz8
+2YVGrLyizK2jO-PGyqxEoBumUIelWvJo2lvb7Nqg7_9us5XVZo9_--ajPY_Wg9jlRvfLtVZi1bXZ
+W2WPrvJCVW1UFtk0f00e3FwtaiE_zSvPkJG95eSyx18MWs5ke5ytrPIftycPlDVfzD45mw9vgfzH
+KLlWBr242Vjly_7frHp0Q1XQHObMnb0KACiIM83cL_n924-zDJo9_vGzh_53WfbryJj3nPXu-J09
+13765jkbNLmqbILK5cLX5e8IIW4uj_TBa1v7tYOVH9Xe1JnMsuKNlTfz8bOHo809OpQee-ipVQ-h
+HTbIQ8fLuL_7zVZWyS-Ii9msL2afai3bgWhHfEghZ2lpyotbiK2WuOrOtb759M3zm8ujta39eYYu
+f7bWf6vDzFqzzsbKx_GeuWZD9jyaNtkUZ72shAya7Vi2ZnLtx88e9rjLFNAczREwbXjoIo9Wbq5t
+7dvwWbN6-OyhXCx9YMi2UxvhLwbtLDjYLLYnD8iayZS9Cmh2twgUjUFXPToId_Z4hnNBvuv_7pY8
+_v3bj-d3t9VGj-yphJRXBOFyTOJ1hbU0PpR__7hjw9tzb81Dx9PNVlaZL2afticPfN7csshpm8oi
+D7cXQkwn42_-_1EI8duvP1WX2fCodrDmSGv6-AUfjb2ZVZNOZqdyRPXIBHJsKKYA2fBo2vAW7Nqg
+hRDv336UPdr--W29uf4w_1etkf3260-k0VCykt0csmcj1QLZzAPZ5h3w-d3t42cPm1dCA9zMR5M5
+fL2alSYrXkzw7Xc-zjNl5RFd0h3ua9-lmzLU3lz4qdr-Vr8871O13HsRGm3uUfOZ0ey1Fufio_7v
+bn2uhEGkmcLTyfgf--zXP-75r_lkTKwJfMmteqf6SHl33qXOp1rMqnbwvBfdNC6ZjvsWMeNz6sUk
+easbeOihBV-MPvm8s2WR8-aVRe5-T7P97defhBDffvcjw7wFNjwyK5rJvEc0jdoxzU9dLqF18Dhj
+jgE5HhYynNqNR-NWz_N_DLrZgh8-exjE-i7c3H75v1XwKFtZZV-WNMfWhmvQGeWKUv2yUm8WLqH1
+otKUbPSQAxuZVywzxc7BLdjPg7_5PBp9-0EI8Z_--WU6GZPBsU_x37HTKTzvUhlcK-bNhp-O89ba
+6Slfrn06bwnyj_SJubTsk9mpt3EC_awvBg11FGcglb7e_f7uVjZoN5uw0Ls9-LIzg6YDst3zTw3G
+ErK7L0uBQVvZVjep2NzfXB65N2io2aDlCAmOcY7uNcQWGBf5o_zUvbAQRzgLyGxgYxMca8AkV0hw
+R_ZQ9mFWkCcabe5RC53RnLVMP7zu727DyodsZdWTtGTXdsn3d7ej7z8IIf7zt79MJ_Nvv-tRCPHb
+rz8ZX_C33-1o6rMGP9Xl48ancTI7HW3u0QEZ73uJMfovZN3EYnVn3zzaUnI29DeXR7wJ--jnv8hx
+bDhgKAbd4zTYoOV4iIDZuCFLGmILHIiimXxT9murLMSREOJi9kmeiWLTBNzTAOWShimsXMoDqmbH
+45X-Vp-W-kthTfesnSe-2PBUmcZSu5FgYMvGDVk0aJ3KGaJ01uWMZQ_VZ2iVdaS4nnxZdVX5stkx
+m81Ueap8qva-ckVZ_P3qPJsXO29F_ruxMBSjZ8iWQcsuPI_769Xr85cvdsy_1fxUZ129MIc1u7ZZ
+FuJICLE9eSCeLd5hxVyUS7a2ZcW2WGtezU91-rvQE43I1F-ogIz0DuKnBZv1Cugrg4Ycy2C61vYX
+s0_1ltfCbro4FL1L-2VHrn2q899q5WiYW7P793XoRljxRK_YXRvq06BfvT5-_WLn1etzIcTLFzt0
+h3nepfKIPlI7XhlcfUWewLx3-fdojmwhhBzf3fnpm698TXarqlE2OywPnmej86yw_iI78ryn-KmF
+-11ovvJT-mP1y9X5N6yo4RFUW0igLsqYuBLW8v3dba1vyvYq_2bVxxVXre2rrysfr-1R7St-Lm9l
+tXldXrG9hJlOxp4EnDN3Iy-2ZNUns1N75wslYdDNqjVoxYiZ2Tf5UsegldcX-qtq2bUGHdyRcCaX
+RW6K-THoNEUGTYfSrjcbDy4Zp__LQddeyi5cvay9U1V1fC3EYdDk0V2SWemFEC4N_uKPoSfbuP3o
+M-PG_m7tmKvrM5cGLZ9vUgyrbaehspWtRSbLLF8qT3VeV2yXn9YacfPTEEXHQQ4r_3VrdunON5dH
+nmzj2ta_7NFQ7yENLatMzueGSnh-dxvk8lZWO1b_fplMtntuTCfj1NxZ8eiN9d3aAVfXZw6mcTI7
+NXKUEAy6XuEadASHxAfEhrssw6B9MGjOMs2_3Vn7zw0_Ay0w6Hk2DYP2yqmX6oUQMGhPDFo_x5SZ
+XRtq1rDBCBSnC86jl3LnUCKG5rlUX1txIahHISY1k32g6QXkd2tb_9nKKjX-ueq8OgxB9vKNGhhN
+pwkhMtqvssjn9YlkTsSrK4t8Ohk7_NHFH8Oby6N5T9e29hueWtLa1v72o89CiI313doBV9dnDqZx
+MjttzjLu6bw4IBNhFG-Fjnh-Fht0CjYNg4ZBuzFoOQPBCsOaFb8dbe4NlzJ17OA83VwerW3tdxxJ
+-kVPZQ5dyiqUBSoApWxP2ARFugYdd-U27kGtP8ImFY1hyRacuCOPNvfAmmxb82LvYvbp6Zvn-sTJ
+cgY9r9yFzg1HSLZyc3mkGE3VSav3lVDgkdXxC-29eTLNg7MVY3XIn2IWosoiH23uyb3yCKywzdOo
+N2ghxO8--Pz42UP3dly7DxmNqIbOwj6mzGko3bVuSDerw6rQMLL59eZvNthcdXC2sjqdjB1s48Uf
+Q65Gsh3zhOX5y0_Vm2aLwfajz0KIjfXd2gFX12cOduZkdipnDViTGxKzo_bF28XsE8HTN88dFOyF
+_zDsYmqR2XTzEc4zxIUGsdBPjU9GccDet1Geg1KB5C2KXtGnjA0Ls7ZpC0Lu9x9_fvzsodVg0BnW
+3qDlmAu9YjfYSnfv4O9UvVL-L0v5rGKI2UrPpqCsTr5MxJqraSnnJ1ifbWt78uDLf9-Y-a-Oersa
+NBe6oLnW4xq8Q37KPM_CFdPk8Wtb_7V-kb9DrPyuwf4WDoZ6VFnkcu7Jl2Adbs7ZJTU3uzUtorUd
+L7X2jN7k9Xfp583s-u5Wcw3ZymovmeOyRPfiC9PJ2MGPLv4YNlS1XrS2tb-96LMQYmN9t3bA1fWZ
+g2mczE450WQAt2Aj2cqBOvr_gxCi-OUbBjl4TCVg6-UOzdrcPJumxS9YhrQ1EBSZGrIDaud33XQk
+uzN79Oj7D2xERn7UsZyYNOjmatDlXdsMQW48GmyQXZ5XX_du3qC71Dp5vGN2efCJa21r-_byyOzI
+UCRHGtgItz2KxXHV_uM0PSNrzOhzdG28p5-d392Ovv_weDt__SZbWYV-GY_Dssink7GD_Vz8MTTr
+p90Nem1rf-vRZyHExvpu7YCr6zMHO3MyO5UzAmyclz0RiivypfKXb-78zteXa1v7LQqw2XUNbTtI
+hxIHaVnzQu53qhzllBJ0ybbb8JSY75BZVwfILH8ZSkrLx-kRefHo_w_j7z8QyO687Dcted3AQ98B
+NzA1LtRy0W7gfnVzeaR4K7szPWKTrY7kp-KA6mDlL96WVS6cYEus2b648C-fkCkzVM9L84M2eOio
+vn29cp0yCFaYbZcPT5O9NawWRh-6EuhowFZZL_YXx5LOd0abe1bXksn-sNTf390KIS5mn_Ytcnvy
+gCBbWY3GTQxKtt128TqdjB3M8_KPYdVD17b2FXtd29onZph3Xx7QPLjhm9uPPgshNtZ3a_d8dX3m
+YGdOZqeUC3JWg60yJ4LVWmt7LUN-bKjBwWHNo8291tz7KhTHZBslY_UxfMnjq3fkb857BEFVAw1U
+A2d-2p48mNfInR8-eygXvcSZGoWXbLXt2B_REcsWXL2sjp-n0fKL1WLgYbnlwgl2zDaag-lndM3V
+xkb--u3HhbH7_NlD1HzZqWn36E5HFkJMJ2MHM7-4Y_ibP65t7W8-_iyE2FjfrR1wdX3mYBons1Pj
+xwpeiikRumRlL-N3YdDNPRzZnjXzB2HQPhg0Rzu4F_5ygn3NeeiDK8GmZWs2zqh8UMS6v7sVQghx
+JN2bx12k8-2jbGXV7OoGXjmUXOUSYWpko7KlmmXIkyDnwgk2wv91Z4_qhdk1_mLQVZG-xMp8ALat
+Wf41hKiOjKM-a38NOlY5tmZiN9p_9Hlta9_frV7b2t9_9Nm3jEVvtvfTl031Qz8tLJQiuey6_Ahl
+m7bNLtfolUd75c6QP3r1_vzli52FY4QQC4fZ1lyDvr_7-f-5CXHUa99Sa1v7bEyy3ffIvVgzsXuP
+hgU0V2iwcV5KOrb78sUOeXS7Uza1rkHtP24uO-lj75LnL9uTe5btkrfePUOeqN9ojI_revX6nIxV
+tle_WcsLjVgeX-2I1bPOKJPLIpf7_7vb0DMhW1ntdwJcBmlXe_SyyKeTceLOuLG_W3v-6vrMwd9P
+ZqeUWRwbYCNcdapXr89fvtiRe_VRM1Q-1TCs9q1sZdXgGgeJ560la2ZnZKfulyEoZb16ff7q9bnP
+H5yn5Qza6rR0vlydwMK3yKecsW-WLE8P8qFy04mAjfC8rX75Yke2iJcvduQ73Z2q4YNm17iEQRtf
+Z-d90fF08inb7K01y1OFepebaEyHdfTyxc6r1_fsFQTzrEO5T5fKF5RLq2edUSaXRS7393e38-yx
+OnX5kQxyKasOVu5U617tR6qFUbnJylZW3aQcl3HaPQ_5LPLpZJy4M26s79bev7o_c-D3k9kpZRbH
+DNgI1zpVv8pWVg2ucaj5V7nsyLZY64_1TloLtZ6uVL-qmFpHdi-FCtkNfePErRmCwtVAcxx54ssX
+O7XmSJZda9YNX2shmgBbuVw2FtqoWZbtz3_GPKnoHDlgI_znKRtco65BN4usWbZOU2rwfa4WzXZP
+PmWKg7NmeQlQ7zIbjeBsZdWr85XnY2SNGWVyWeRyf393O8_F5Us2R34kA9vovMHKpxq_VvvT2lnZ
+Ozku17RLAXFZ5NPJOHFn3Fjfrb1-dX3m4O8ns1PKLI4lMFiHh-pBpvigfMlchYbBOl9uHtk82JI1
+s_uFwolbMwSFq4w9W_7v726DX9jKqpEKJltzoFwW_XQyTjzQN9Z3a_9fXZ85_PvJ7JTPBYL0NYh_
+hey2S-Foc4-djZ06XIaCjkZwspxRJpdFrvQ3l0fhpsHa1n5rYyJfoz2Kg8sin07GiTvjxvpu7f2r
+6zMHfz_ZnVJmcYyBwTo8UJybla2srm3tB9orVqtvzexo-HocDEFQiBoyxZrJmpWKN0G26TgYHu1P
+KILBS-EgqdyQrYpYtjNlWEwMeaJqBILBzTzXzuLo5xUosuYUWAgxnYwTb4cHx7XNzd8XRiMYXMuD
+hXU_UNWuWQFaZgoMQVCIGjY8Czq3efKjzb2yyKvWPNrcS4Th0Z6IgxAM1uRBlGlAlsRWpVhzggx5
+Ivk4wGAdXqL4_9zPK0Rk0ymzEGI6GSfeDg_Oa5ubvy_MUjC4lgctKr8-Kou8dm0K0ORTZgiCQtRw
+WUP0x5rJg3hKxFVrHm3uJc7waE-EwQkGa-IguBBna1ZYWR4-AsMZ-ZF8HGCwDrf3Sme9TsEhmwZX
+WQgxnYwTb4cHx7XNzd_XimQwmHnQ2qANePzy9UBhBWhK4CpDEBSihh3ft53-7DX8I_KqNY8298C1
+DI-2RBy0YLAmD7wNZbZmhZVl8CNwA0OeSD4OMFiHTbpqx76hmLA7E4D1WQgxnYwTb4cHx7XNzd91
+IhwMrvLAoEG3c-2yyJvnSi5DH6c74GUZgqAQlRn-IpmpTi_Pr_Wqg4NbcFnk08k48UDfWN_tvX91
+febg7yezUz4XCNLXwPgX2WGbHZyggflT4O4MeSL5OMBgHbYo8gjq5TsNzO5MAO7OQojpZJx4Ozw4
+rm1u-r5sFoDBxAOrBq3UgeY5kZvQK3QHbIohCApRmdWvs_E2M7s52AaXRT6djBMP9I313dr7V9dn
+Dv5_Mjvlc4EgfQ3sWTO7cDOTg7BTg20w5Ink4wCDddiWQTczuzMB2B4LIaaTceLt8OC4trn5u05G
+gMFVHhh0ZNl8G-5NI6lE0B2wbYYgKERlptyZjaCBCcoiB7vkssink3Higb6xvlt7-_r6zMHfT2an
+fC4QZF0cbaPNPU2mS7B7FkJMJ_PE2_HBcW1z83c5IxCWYH3u5M4LGfvryRnDoH0w6BYZBE6cB8ua
+8lLuLIQoixzcO0MQFKIyHWvmJNdkgrLIwT5wWeTTyTjxQN9Y3629f3V95uDvJ7NTPhcIMqPR5h5H
+lT7TJdgfFkJMJ_PE2_HBcW1z83c5UxCW4GaWHXiBQWsy9tRbhkH7Y9AtMgucFFcTeaA4sjxU352F
+EGWRgz3kBUUYgiBvRJkr95nstnRLn-mjYA9ZPvXpZJx46G_s79bev7o_c-D3k9kpKiXUUqPNPY4e
+faZLsIesNCHEdDJOvB0eHNc2N3_XMwghCpaZLmU3VnnBY4mxp95yQw_D9sSgNbMMnAjrJPhA51vy
+nbLIwf5wWeR8nPNYOUcIgnwQ5XJzn8n_S7eqzJ8De8g6cTCdjBNPho313dr7V9dnDv5_MjtFpYRa
+arS5x9FTZboEe8ItmhBiOhkn3g4Pjmubm7-LmYUwTpll19Xl6i3so7fcoodBe2LQbZITHBcvm-gD
+_X35i2WRgz1huuRjW5aV84UgqC9RXuv3WdXpObfBvbOpmJhOxoknxsb6bu39q_szB38-mZ2iUkIt
+Ndrcowb2hw02IcR0Mk68HR4c1zY3f_eTRXgnyLLTLs3YRz-ZYA_D9sSgOyUqOEDubgiDssj5i_B_
+mS75eEwxxw0EQS5F2d2lz9gmqh4Bdsa2o2Q6GSeeKhvru7X3r67PHPz9ZHaKSgm11GhzjxrYPTto
+QojpZJx4Ozw4rm1u-s4njrCPnulSdtdOjD11z457GLQnBm0sacGesZJ0Bk1jUBY5fxrshkebe2WR
+O2OOJwiCzIpslNKNctxsn7F9cCaD7XEvKot8Ohknnkgb67u196_uzxz8-WR2ikoJdSoCFEBgS9xj
+E0JMJ_PE2_HBcW1z83eOBKRDBKzcZBe1wth3e_xJD4PuvVlMYLATrk0uB2YyKIucfwk2wmWR8xb3
+yzQxCIK6S04xznrbfca2Iv8Y3IK9VVnk08kYCdajTman-scJ5KEyqgyw1zismapuVTBoTwwaKRNQ
+OlcHcE83HbAYbe7RJAjALdiHvqGRQaP12PikviQe2DNeKtGc8ZBqglzewTosF1gurb0wzUQp-hAE
+aUrO7nnpxonmmDNlcuCFHJzKIp9OxsjDHnUyOw03fqAelXEBgQWHYs1UYJcVPNoHd0YqecKagwlG
+m3t9sRht7tGECMAN7EPfusEo_5V8BOBeuEWi9c5fpg4LrmVfDglGAwZ3NuilUs_HOWd0XRY5PwB7
+ZYgQBCWtFrUlbu69_RkkCA9wcCnc4iNywPfPOEvZfXzo-WzeBS4YXMfdU88r-nM9yVqzVxXCWyH5
+wZ6zkdTzkDO6LoucH6TGEARB-qpj-QmX_21BREXK4QH2nDt_hOPca07tXH3o-W8BBC44YTaejD4X
+ofit2Z8pBSQYAdhDNpWSoaw3o_uyyPlBTAxBEBS2DNYlf9iThjAAgzumsMGPc6gHw7Gecb99cC28
+wAXHy-ZSMjj_cy_iKblebGiwgkGAe2SrKRnonmR0XRY5PwiRIQiC4pS92uWAe284ejC4Ndv7OPcc
+6kFyiOfqTx90CztwwYGzs-QMlL-sVXCz733jYhLMAuyYbadqBHvFfUZUFjkP8pkhCILiFjneF99z
+UNO6c78tpuMP4rjBkbGDH3F4R8Bfep-P1Yc_phZZEIN95n4TNkSetyjvZuzPNGISjAPshntJ25j2
+Te4zorLI_QUfGIIgKAWR783r--Rvl7Wuyj60uIOg9yMGR8w9ToDDO1Be3Ptwxv32cbcIghjsLfee
+thEUtoV9P7P0ZIPiFkwEbIl7T9s49nNhnxGVRc4v22YIgqCURX6o0zuth723RI7fwVGCE_R_J8C9
+HOQh8nJ9L1vcS59OiyCIwT6wD2lbTeEIitxSvd2Z9bspCQrmAu7OXvlarHur02dEZZHzh0wxBEEQ
+RK7Yrv-T183WvR5bskFg8PjACbKHE5MDO3Ru35vaVh-6NFs0QQzuhb1K4ciKn5ENMTMbH4ptsoLR
+gFuwzx4XwT4b6YdEZZHz7izLXm0NPBoMXipZfHa30PfWWG63q3V9Ndgxn0KX4wMnyJ5PMqYqaKZf
+div77dGUs4gpoMGW2JPk1Unt0NnG5izx176Yow2C6YA1OQhfi3XPTfVDorLIeddk9mrZEDwa3Dpx
+MEN7XBa53Tyv1rfeG-xX55jAYOaAJhxfFbTVz9vKvnq0hnIVX3CDjXDvadsl2SMoilb7r2yx96IK
+NQhmBFY4RF_L7Cys9kPFHH1YNgSPBi_VLCE6Wuj7Xxa5o4Tvq8Ft9U8HDGYOdPIxVUeXfQ_-7LEq
+BNRiCmhwR_4lSc0me2QF0lHveGHQsoJJpcwReFnc52K7H7pcHjwaHg1u5wWBriIaj6bLssh7SH6r
+Dfba_kTACXIcC4m4UrrvbX0arXUxAyfI-bqApfSPgHveTBvFE2ohmFSyHI2XxXdGvfdDS0uC4NFg
+TY7P0WI6l-5NoWODsRo8BXAiHNmiYq2gPvTtX0YzWN7A0bM-OW_wj6-e_LXJXQom1FEwr9QMOkpf
+i_y8vOqHHZcEwaPBSyVLrI4W_irKIvfUIHQanNS4Kct7C46MU1hsfDXGz77pMZqNFllwg5n9z3Yj
+fWT1xuet-j-LnmASYdi6nwAAABB0RVh0TG9kZVBORwAyMDExMDIyMeNZtsEAAAAASUVORK5CYII=
+:: main.lua
+--[[pod_format="raw",created="2024-06-26 12:33:32",modified="2024-06-28 12:25:30",revision=684]]
+include("json.lua")
+include("basexx.lua")
+include("textwrap.lua")
+
+local function get_boot_file()
+	local url = "https://raw.githubusercontent.com/TunayAdaKaracan/arc-system-loader/main/boot.lua"
+	local data = fetch(url)
+	return data
+end
+
+local function install_loader()
+	local file = get_boot_file()
+	-- First create the systems folder to hold installed ones
+	mkdir("/systems")
+	
+	-- Not sure why can't directly transfer but this is the way
+	cp("/system", "/original")
+	cp("/original", "/systems/picotron")
+	
+	-- Rename boot.lua to sysboot.lua and delete old file
+	cp("/systems/picotron/boot.lua", "/systems/picotron/sysboot.lua")
+	rm("/systems/picotron/boot.lua")
+	
+	-- Create /system folder in host so it will stay same between starts.
+	rm("/system")
+	cp("/original", "/system")
+	rm("/original")
+	
+	-- Rename loaded boot.lua to sysboot.lua as well.
+	cp("/system/boot.lua", "/system/sysboot.lua")
+	rm("/system/boot.lua")
+	
+	-- Finally save system loader as boot.lua
+	store("/system/boot.lua", file)
+	
+	store_metadata("/systems", {system="picotron"})
+end
+
+local function attach_system_selector()
+	local container = gui:attach({
+		x = 64-30,
+		y = 20,
+		width = 60,
+		height=100,
+		draw = function(self)
+			-- I have zero idea why this is even required at all to work properly.
+		end
+	})
+	local pulldown = container:attach_pulldown({
+		x = 0,
+		y = 0,
+		width = 50,
+		height=1000
+	})
+	container:attach_scrollbars()
+	
+	local systems = ls("/systems")
+	for system in all(systems) do
+		pulldown:attach_pulldown_item({
+			label = system,
+			stay_open = true,
+			action = function(self)
+				store_metadata("/systems", {system=system})
+			end
+		})
+	end
+end
+
+local function attach_update_button()
+	gui:attach_button({
+		x=64-20,
+		y=60,
+		label="Update",
+		click=function(self)
+			store("/system/boot.lua", get_boot_file())
+			gui:detach(self)
+			is_up_to_date = true
+			attach_system_selector()
+		end
+	})
+end
+
+is_installed = (ls("/systems")~=nil)
+is_up_to_date_checked = false
+is_up_to_date = nil
+
+gui = create_gui()
+
+if not is_installed then
+	gui:attach_button({
+		x=64-22,
+		y=60,
+		label="Install",
+		click=function(self)
+			install_loader()
+			gui:detach(self)
+			is_installed = true
+		end
+	})
+end
+
+function _init()
+	window({
+		width = 128,
+		height = 128,
+		resizeable = false,
+		title = "Arc Installer"
+	})
+end
+
+function _draw()
+	cls(5)
+	gui:draw_all()
+	if not is_installed then
+		print("Arc is not installed.")
+		return
+	end	
+	
+	if not is_up_to_date_checked then
+		print("Checking boot.lua version")
+		return
+	end
+	
+	if not is_up_to_date then
+		print("File is not up to date")
+		return
+	end
+	
+	print("Select your system.\nCurrent system: "..fetch_metadata("/systems").system)
+end
+
+function _update()
+	if is_installed and not is_up_to_date_checked then
+		is_up_to_date = get_boot_file() == fetch("/system/boot.lua")
+		is_up_to_date_checked = true
+		
+		if not is_up_to_date then
+			attach_update_button()
+		else
+			attach_system_selector()
+		end
+	end
+	gui:update_all()
+end
+:: test.lua
+--[[pod_format="raw",created="2024-06-28 09:19:18",modified="2024-06-28 09:35:31",revision=17]]
+
+include("basexx.lua")
+include("json.lua")
+function _init()
+	window(128, 128)
+
+	local job_id, err = _fetch_remote("http://160.20.108.214:3030/api/v1/repos/KutupTilkisi/dev-system/contents/misc/p64_cart.png", "bitch", "ass")
+				-- printh("[fetch] job id: "..job_id)
+	
+	if (err) then
+		printh("job error")
+	end
+	
+	local tt = time()
+	
+	while time() < tt + 10 do -- to do: configurable timeout.
+		local result, meta, hash_part, err = _fetch_remote_result(job_id)
+		if (result or err) then
+			printh(result or err)
+		end
+	end
+	printh("timeout")
+	printh(resp)
+end
+
+function _draw()
+	cls(5)
+end
+
+function _update()
+end
+:: textwrap.lua
+--[[pod_format="raw",created="2024-06-19 18:35:04",modified="2024-06-27 20:30:21",revision=245]]
+function text_wrap(text, count)
+	local messages = {}
+	local temp_str = ""
+	local max_length = 0
+	for word in string.gmatch(text, "%S+") do	   
+		if #temp_str == 0 then
+	  		temp_str = word
+	  	else
+	  		-- + 1 for space between words.
+	  		if #temp_str + #word + 1 <= count then
+	   			temp_str = temp_str .. " " .. word
+		   	else
+		   		if #temp_str > max_length then
+		   			max_length = #temp_str
+		   		end
+		   		add(messages, temp_str)
+		   		temp_str = word
+		   	end
+	  	end
+	end
+	-- If there is still remaining text on temp, it should be added as a new line
+	if #temp_str ~= 0 then
+		if #temp_str > max_length then
+		   	max_length = #temp_str
+		end
+		add(messages, temp_str)
+	end
+	return messages, max_length
+end
+
+return text_wrap
+:: .info.pod
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI0LTA2LTI2IDEyOjUyOjM1Iixtb2RpZmllZD0iMjAyNC0w
+Ni0yOCAxMjoyNTozMSIscnVudGltZT03LHdvcmtzcGFjZXM9e3tsb2NhdGlvbj0ibWFpbi5sdWEj
+MSIsd29ya3NwYWNlX2luZGV4PTF9fV1dbHo0AAQAAAADAAAAMG5pbA==
+:: [eoc]
